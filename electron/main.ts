@@ -17,7 +17,16 @@ import type {
 
 let mainWindow: BrowserWindow | null = null;
 
+function resolveAppIconPath(): string | undefined {
+  const candidates = [
+    path.join(__dirname, '..', 'build', 'icon.ico'),
+    path.join(__dirname, '..', 'build', 'icon.png'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
 function createWindow() {
+  const appIcon = resolveAppIconPath();
   mainWindow = new BrowserWindow({
     width: 1480,
     height: 920,
@@ -25,6 +34,7 @@ function createWindow() {
     minHeight: 480,
     backgroundColor: '#0b0e14',
     title: 'AC Car Studio — Assetto Corsa Vehicle Creator & Tuner',
+    icon: appIcon,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -58,6 +68,7 @@ function createWindow() {
         minHeight: 380,
         backgroundColor: '#0b0e14',
         title: frameName || 'AC Car Studio — フローティング編集ウィンドウ',
+        icon: appIcon,
         autoHideMenuBar: true,
         webPreferences: {
           preload: path.join(__dirname, 'preload.js'),

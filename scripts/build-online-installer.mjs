@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 const rootDir = process.cwd();
 const srcCs = path.join(rootDir, 'installer', 'OnlineInstaller.cs');
 const manifestPath = path.join(rootDir, 'installer', 'app.manifest');
+const iconPath = path.join(rootDir, 'build', 'icon.ico');
 const outDir = path.join(rootDir, 'release');
 const outExe = path.join(outDir, 'AC-Car-Studio-Online-Setup.exe');
 
@@ -21,24 +22,23 @@ if (!cscPath) {
 
 fs.mkdirSync(outDir, { recursive: true });
 
-execFileSync(
-  cscPath,
-  [
-    '/nologo',
-    '/target:winexe',
-    '/platform:x64',
-    '/optimize+',
-    `/win32manifest:${manifestPath}`,
-    `/out:${outExe}`,
-    '/r:System.dll',
-    '/r:System.Core.dll',
-    '/r:System.Drawing.dll',
-    '/r:System.Windows.Forms.dll',
-    '/r:System.Web.Extensions.dll',
-    srcCs,
-  ],
-  { stdio: 'inherit' }
-);
+const cscArgs = [
+  '/nologo',
+  '/target:winexe',
+  '/platform:x64',
+  '/optimize+',
+  `/win32manifest:${manifestPath}`,
+  ...(fs.existsSync(iconPath) ? [`/win32icon:${iconPath}`] : []),
+  `/out:${outExe}`,
+  '/r:System.dll',
+  '/r:System.Core.dll',
+  '/r:System.Drawing.dll',
+  '/r:System.Windows.Forms.dll',
+  '/r:System.Web.Extensions.dll',
+  srcCs,
+];
+
+execFileSync(cscPath, cscArgs, { stdio: 'inherit' });
 
 const stat = fs.statSync(outExe);
 console.log(

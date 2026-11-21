@@ -79,6 +79,11 @@ namespace AcCarStudioInstaller
         private void InitializeUi()
         {
             Text = "AC Car Studio — GitHub オンラインインストーラー";
+            try
+            {
+                Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            }
+            catch { }
             Size = new Size(640, 560);
             MinimumSize = new Size(620, 540);
             StartPosition = FormStartPosition.CenterScreen;

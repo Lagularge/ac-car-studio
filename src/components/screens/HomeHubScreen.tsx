@@ -5,7 +5,6 @@ import {
   ChevronRight,
   Download,
   FolderOpen,
-  Gauge,
   Paintbrush,
   PlusCircle,
   Server,
@@ -132,9 +131,11 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
       {/* Top Header */}
       <header className="relative z-10 px-8 py-6 border-b border-[#1a2233] bg-[#0b0f18]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-500 via-rose-600 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-500/25">
-            <Gauge className="w-6 h-6 text-white" />
-          </div>
+          <img
+            src="./icon.png"
+            alt="AC Car Studio"
+            className="w-11 h-11 rounded-2xl object-cover border border-white/15 shadow-lg shadow-rose-500/20 bg-black"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black tracking-wider text-white">AC CAR STUDIO</h1>

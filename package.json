@@ -56,11 +56,14 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "build/icon.ico",
+      "build/icon.png",
       "!dist-electron/**/*.map",
       "!node_modules/**/*"
     ],
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "build/icon.ico"
     },
     "portable": {
       "artifactName": "AC-Car-Studio-${version}-win-portable.exe"
