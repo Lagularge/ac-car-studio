@@ -8,12 +8,30 @@ $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $RepoApi = 'https://api.github.com/repos/Lagularge/ac-car-studio/releases/latest'
+$CerUrl = 'https://raw.githubusercontent.com/Lagularge/ac-car-studio/main/installer/AC-Car-Studio-Publisher.cer'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\AC Car Studio'
 $TargetExe = Join-Path $InstallDir 'AC Car Studio.exe'
 
 Write-Host '======================================================' -ForegroundColor Cyan
 Write-Host '  AC Car Studio — GitHub オンラインインストーラー' -ForegroundColor Cyan
 Write-Host '======================================================' -ForegroundColor Cyan
+
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+# Optional: Download & register Publisher Certificate in CurrentUser\TrustedPublisher
+try {
+  $LocalCer = Join-Path $InstallDir 'AC-Car-Studio-Publisher.cer'
+  Invoke-WebRequest -Uri $CerUrl -OutFile $LocalCer -UseBasicParsing -ErrorAction SilentlyContinue
+  if (Test-Path $LocalCer) {
+    $CertObj = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($LocalCer)
+    $TpStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('TrustedPublisher', 'CurrentUser')
+    $TpStore.Open('ReadWrite')
+    $TpStore.Add($CertObj)
+    $TpStore.Close()
+  }
+} catch {
+  # Non-fatal
+}
 
 Write-Host '[1/4] GitHub Releases から最新バージョン情報を取得中...' -ForegroundColor Yellow
 $Release = Invoke-RestMethod -Uri $RepoApi -Headers @{ 'User-Agent' = 'AC-Car-Studio-PS-Installer' }
@@ -38,6 +56,7 @@ if (Test-Path $TargetExe) {
   Remove-Item -Force $TargetExe
 }
 Move-Item -Force $TempFile $TargetExe
+Unblock-File -Path $TargetExe -ErrorAction SilentlyContinue
 Set-Content -Path (Join-Path $InstallDir 'version.txt') -Value $Release.tag_name -Encoding UTF8
 
 Write-Host '[3/4] デスクトップ & スタートメニューのショートカットを作成中...' -ForegroundColor Yellow

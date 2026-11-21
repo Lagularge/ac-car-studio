@@ -7,6 +7,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -391,6 +392,21 @@ namespace AcCarStudioInstaller
             return meta;
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool DeleteFileW(string lpFileName);
+
+        private static void RemoveZoneIdentifier(string filePath)
+        {
+            try
+            {
+                DeleteFileW(filePath + ":Zone.Identifier");
+            }
+            catch
+            {
+                // Ignore if ADS is not present
+            }
+        }
+
         private static string GetStr(Dictionary<string, object> dict, string key, string fallback)
         {
             if (dict != null && dict.ContainsKey(key) && dict[key] != null)
@@ -441,6 +457,7 @@ namespace AcCarStudioInstaller
                     File.Delete(targetExePath);
                 }
                 File.Move(tempDownloadPath, targetExePath);
+                RemoveZoneIdentifier(targetExePath);
 
                 // Write version marker & copy uninstaller helper
                 File.WriteAllText(Path.Combine(installDir, "version.txt"), latestRelease.TagName, Encoding.UTF8);
@@ -449,6 +466,7 @@ namespace AcCarStudioInstaller
                 if (!String.Equals(Path.GetFullPath(selfExe), Path.GetFullPath(uninstallerExe), StringComparison.OrdinalIgnoreCase))
                 {
                     File.Copy(selfExe, uninstallerExe, true);
+                    RemoveZoneIdentifier(uninstallerExe);
                 }
 
                 if (chkDesktopShortcut.Checked)

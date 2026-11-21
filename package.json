@@ -18,7 +18,9 @@
     "start": "npm run build && electron .",
     "typecheck": "tsc --noEmit",
     "build:installer": "node scripts/build-online-installer.mjs",
-    "dist": "npm run build && electron-builder --win && npm run build:installer"
+    "sign": "powershell -ExecutionPolicy Bypass -File scripts/sign-executables.ps1",
+    "trust:cert": "powershell -ExecutionPolicy Bypass -File scripts/sign-executables.ps1 -InstallRootTrust",
+    "dist": "npm run build && electron-builder --win && npm run build:installer && npm run sign"
   },
   "dependencies": {},
   "devDependencies": {
