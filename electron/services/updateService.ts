@@ -305,7 +305,7 @@ export async function performAppUpdate(
 
     try {
       if (portableExe && safeAsset.toLowerCase().endsWith('.exe')) {
-        const stagedPath = `${portableExe}.update.tmp`;
+        const stagedPath = path.join(os.tmpdir(), `AC-Car-Studio-Update-${Date.now()}.exe`);
         await downloadFileWithProgress(
           info.downloadUrl,
           stagedPath,
@@ -345,12 +345,32 @@ export async function performAppUpdate(
         ].join('\r\n');
         fs.writeFileSync(scriptPath, cmdBody, 'utf8');
 
-        const child = spawn('cmd.exe', ['/c', scriptPath], {
-          detached: true,
-          stdio: 'ignore',
-          windowsHide: true,
-        });
-        child.unref();
+        const needsAdminElevation = /program files/i.test(portableExe);
+        if (needsAdminElevation) {
+          const child = spawn(
+            'powershell.exe',
+            [
+              '-NoProfile',
+              '-WindowStyle',
+              'Hidden',
+              '-Command',
+              `Start-Process cmd.exe -Verb RunAs -WindowStyle Hidden -ArgumentList '/c "${scriptPath}"'`,
+            ],
+            {
+              detached: true,
+              stdio: 'ignore',
+              windowsHide: true,
+            }
+          );
+          child.unref();
+        } else {
+          const child = spawn('cmd.exe', ['/c', scriptPath], {
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+          child.unref();
+        }
 
         onProgress({
           phase: 'done',

@@ -9,6 +9,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -151,11 +152,7 @@ namespace AcCarStudioInstaller
             lblDirTitle.AutoSize = true;
             Controls.Add(lblDirTitle);
 
-            string defaultDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Programs",
-                "AC Car Studio"
-            );
+            string defaultDir = Program.GetDefaultProgramFilesInstallDir();
 
             txtInstallDir = new TextBox();
             txtInstallDir.Text = defaultDir;
@@ -435,7 +432,7 @@ namespace AcCarStudioInstaller
             cts = new CancellationTokenSource();
 
             string targetExePath = Path.Combine(installDir, "AC Car Studio.exe");
-            string tempDownloadPath = Path.Combine(installDir, "AC-Car-Studio.download.tmp");
+            string tempDownloadPath = Path.Combine(Path.GetTempPath(), "AC-Car-Studio.download.tmp");
 
             try
             {
@@ -627,6 +624,30 @@ namespace AcCarStudioInstaller
         {
             try
             {
+                using (RegistryKey key = Registry.LocalMachine.CreateSubKey(UninstallRegKeyPath))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("DisplayName", "AC Car Studio");
+                        key.SetValue("DisplayVersion", version.TrimStart('v', 'V'));
+                        key.SetValue("Publisher", "Lagularge");
+                        key.SetValue("InstallLocation", installDir);
+                        key.SetValue("DisplayIcon", mainExe);
+                        key.SetValue("URLInfoAbout", "https://github.com/Lagularge/ac-car-studio");
+                        key.SetValue("UninstallString", "\"" + uninstallerExe + "\" --uninstall");
+                        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                        key.SetValue("NoRepair", 0, RegistryValueKind.DWord);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to CurrentUser if HKLM fails
+            }
+
+            try
+            {
                 using (RegistryKey key = Registry.CurrentUser.CreateSubKey(UninstallRegKeyPath))
                 {
                     if (key == null) return;
@@ -674,7 +695,8 @@ namespace AcCarStudioInstaller
                 string startMenuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "AC Car Studio");
                 if (Directory.Exists(startMenuDir)) Directory.Delete(startMenuDir, true);
 
-                Registry.CurrentUser.DeleteSubKeyTree(UninstallRegKeyPath, false);
+                try { Registry.LocalMachine.DeleteSubKeyTree(UninstallRegKeyPath, false); } catch { }
+                try { Registry.CurrentUser.DeleteSubKeyTree(UninstallRegKeyPath, false); } catch { }
 
                 string mainExe = Path.Combine(installDir, "AC Car Studio.exe");
                 if (File.Exists(mainExe)) File.Delete(mainExe);
@@ -705,17 +727,61 @@ namespace AcCarStudioInstaller
 
     internal static class Program
     {
+        internal static string GetDefaultProgramFilesInstallDir()
+        {
+            string pf = Environment.GetEnvironmentVariable("ProgramW6432");
+            if (String.IsNullOrEmpty(pf))
+            {
+                pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            }
+            return Path.Combine(pf, "AC Car Studio");
+        }
+
+        private static bool IsRunningAsAdministrator()
+        {
+            try
+            {
+                WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         [STAThread]
         private static int Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            string defaultDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Programs",
-                "AC Car Studio"
-            );
+            if (!IsRunningAsAdministrator())
+            {
+                try
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = Application.ExecutablePath;
+                    psi.Arguments = args != null && args.Length > 0 ? String.Join(" ", args) : "";
+                    psi.UseShellExecute = true;
+                    psi.Verb = "runas";
+                    Process.Start(psi);
+                    return 0;
+                }
+                catch
+                {
+                    MessageBox.Show(
+                        "Program Files へインストールするため、管理者権限での起動が必要です。",
+                        "AC Car Studio インストーラー",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                    return 1;
+                }
+            }
+
+            string defaultDir = GetDefaultProgramFilesInstallDir();
 
             foreach (string arg in args)
             {

@@ -9,8 +9,18 @@ $ErrorActionPreference = 'Stop'
 
 $RepoApi = 'https://api.github.com/repos/Lagularge/ac-car-studio/releases/latest'
 $CerUrl = 'https://raw.githubusercontent.com/Lagularge/ac-car-studio/main/installer/AC-Car-Studio-Publisher.cer'
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\AC Car Studio'
+$ProgramFilesDir = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
+$InstallDir = Join-Path $ProgramFilesDir 'AC Car Studio'
 $TargetExe = Join-Path $InstallDir 'AC Car Studio.exe'
+
+# Self-elevate to Administrator if not already running as admin (required for C:\Program Files)
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $IsAdmin) {
+  Write-Host '管理者権限でインストーラーを再起動しています (C:\Program Files への導入)...' -ForegroundColor Yellow
+  $Cmd = "irm https://raw.githubusercontent.com/Lagularge/ac-car-studio/main/installer/install.ps1 | iex"
+  Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$Cmd`""
+  return
+}
 
 Write-Host '======================================================' -ForegroundColor Cyan
 Write-Host '  AC Car Studio — GitHub オンラインインストーラー' -ForegroundColor Cyan
