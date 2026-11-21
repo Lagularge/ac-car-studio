@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-app: #0b0e14;
+    --bg-panel: #121722;
+    --bg-card: #171d2b;
+    --border-subtle: #252e42;
+    --accent-red: #f43f5e;
+    --accent-amber: #f59e0b;
+    --accent-cyan: #06b6d4;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2d3748 #0b0e14;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #0b0e14;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #2b354b;
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #3f4d6b;
+  }
+}
+
+/* Motorsport numeric alignment */
+.font-mono-num {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+input[type="range"] {
+  accent-color: #f43f5e;
+}
