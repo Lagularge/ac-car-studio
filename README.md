@@ -27,7 +27,20 @@ Assetto Corsa の車両 Mod 作成・3D モデル改造・GT7 風 3D スキン�
   - **プレビュー画像＆コース図付きサーキット選択 GUI**、**写真＆スキンサムネイル付き車両選択 GUI**
   - `cfg/server_cfg.ini`・`cfg/entry_list.ini`・`cfg/csp_extra_options.ini` の読込・編集・保存、5 種の用途プリセット、`acServer.exe` の直接起動・停止・ライブログ表示・Content Manager 招待リンク生成に対応
 
-## 起動方法
+## ダウンロード（Windows ポータブル版）
+
+インストール不要でそのまま起動できる Windows 用 `.exe` を [GitHub Releases](https://github.com/Lagularge/ac-car-studio/releases/latest) からダウンロードできます。
+
+1. [Latest Release](https://github.com/Lagularge/ac-car-studio/releases/latest) から `AC-Car-Studio-x.x.x-win-portable.exe` をダウンロード
+2. ダブルクリックして起動（初回起動時に Assetto Corsa の `content/cars` フォルダを自動検出します）
+
+## 自動アップデート確認機能
+
+- 起動時に自動で GitHub リポジトリ (`Lagularge/ac-car-studio`) の最新リリースを確認します。
+- 新しいバージョンが公開されている場合は **アップデート確認ダイアログ** が表示され、更新内容を確認したうえで「今すぐアップデートを実行」を選ぶと自動で最新版へ更新・再起動できます。
+- 「設定」画面から自動チェックの ON/OFF 切替や、手動での「今すぐアップデートを確認」も可能です。
+
+## ソースからの起動・ビルド方法
 
 ```powershell
 # 依存パッケージのインストール

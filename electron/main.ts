@@ -3,8 +3,10 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import * as acService from './services/acFileService';
 import * as serverManager from './services/serverManager';
+import * as updateService from './services/updateService';
 import type {
   AcServerSavePayload,
+  AppUpdateCheckResult,
   CreateCarPayload,
   CustomPresetRecord,
   SavePartPayload,
@@ -345,6 +347,22 @@ function registerIpcHandlers() {
   ipcMain.handle('ac:getAcServerStatus', () => serverManager.getAcServerStatus());
   ipcMain.handle('ac:openServerFolder', async (_e, serverDir: string) => {
     await shell.openPath(serverDir);
+  });
+
+  // GitHub Auto-Update APIs
+  ipcMain.handle('ac:getAppVersion', () => updateService.getAppVersion());
+  ipcMain.handle('ac:checkForUpdates', () => updateService.checkForGitHubUpdates());
+  ipcMain.handle('ac:performAppUpdate', (_e, info: AppUpdateCheckResult) =>
+    updateService.performAppUpdate(info, (ev) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('ac:updateProgress', ev);
+      }
+    })
+  );
+  ipcMain.handle('ac:openExternalUrl', async (_e, url: string) => {
+    if (typeof url === 'string' && /^https:\/\//i.test(url)) {
+      await shell.openExternal(url);
+    }
   });
 }
 

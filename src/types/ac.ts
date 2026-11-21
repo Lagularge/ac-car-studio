@@ -333,6 +333,43 @@ export interface AcServerLogEvent {
   timestamp: string;
 }
 
+// ============================================================================
+// GitHub Auto-Update Checker & Installer Types
+// ============================================================================
+
+export type AppUpdateInstallMode = 'portable_exe' | 'git_pull' | 'browser_download';
+
+export interface AppUpdateCheckResult {
+  status: 'update_available' | 'up_to_date' | 'no_releases' | 'error';
+  currentVersion: string;
+  latestVersion: string | null;
+  releaseName: string | null;
+  releaseNotes: string;
+  publishedAt: string | null;
+  releaseUrl: string;
+  downloadUrl: string | null;
+  assetName: string | null;
+  assetSizeBytes: number;
+  installMode: AppUpdateInstallMode;
+  checkedAt: string;
+  error?: string;
+}
+
+export interface AppUpdateProgressEvent {
+  phase: 'downloading' | 'verifying' | 'git_pull' | 'building' | 'applying' | 'done' | 'error';
+  percent: number; // 0..100
+  message: string;
+  downloadedBytes?: number;
+  totalBytes?: number;
+}
+
+export interface AppUpdateApplyResult {
+  ok: boolean;
+  message: string;
+  restarting?: boolean;
+  downloadedPath?: string;
+}
+
 export interface ElectronAcApi {
   detectAcDir: () => Promise<AcDetectResult>;
   selectCarsDir: () => Promise<string | null>;
@@ -430,6 +467,12 @@ export interface ElectronAcApi {
   openServerFolder: (serverDir: string) => Promise<void>;
   onServerLog?: (callback: (event: AcServerLogEvent) => void) => () => void;
   onServerExit?: (callback: (info: { code: number | null; signal: string | null }) => void) => () => void;
+  // GitHub Auto-Update APIs
+  getAppVersion: () => Promise<string>;
+  checkForUpdates: () => Promise<AppUpdateCheckResult>;
+  performAppUpdate: (info: AppUpdateCheckResult) => Promise<AppUpdateApplyResult>;
+  openExternalUrl: (url: string) => Promise<void>;
+  onUpdateProgress?: (callback: (event: AppUpdateProgressEvent) => void) => () => void;
   // App-level OS navigation command listener (Windows Mouse Side Buttons Back / Forward)
   onAppNavCommand?: (callback: (direction: 'back' | 'forward') => void) => () => void;
 }

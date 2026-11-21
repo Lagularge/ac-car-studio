@@ -3,6 +3,7 @@ import {
   Box,
   Car,
   ChevronRight,
+  Download,
   FolderOpen,
   Gauge,
   Paintbrush,
@@ -27,6 +28,9 @@ interface HomeHubScreenProps {
   carsDir: string | null;
   carCount: number;
   savedPartCount: number;
+  appVersion: string;
+  availableUpdateVersion: string | null;
+  onOpenUpdateModal: () => void;
   onSelectMode: (mode: WorkModeId) => void;
   onPickFolder: () => void;
   onUseDemo: () => void;
@@ -36,6 +40,9 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
   carsDir,
   carCount,
   savedPartCount,
+  appVersion,
+  availableUpdateVersion,
+  onOpenUpdateModal,
   onSelectMode,
   onPickFolder,
   onUseDemo,
@@ -129,7 +136,12 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
             <Gauge className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-wider text-white">AC CAR STUDIO</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-black tracking-wider text-white">AC CAR STUDIO</h1>
+              <span className="text-[10px] font-mono-num px-2 py-0.5 rounded-full bg-[#141c2c] border border-[#27344f] text-slate-300">
+                v{appVersion}
+              </span>
+            </div>
             <p className="text-xs text-slate-400 tracking-wide">
               Assetto Corsa Vehicle Creator • CSP 3D Showroom • Engine-Sim Workbench
             </p>
@@ -137,6 +149,17 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          {availableUpdateVersion && (
+            <button
+              type="button"
+              onClick={onOpenUpdateModal}
+              className="flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/60 text-emerald-200 font-semibold px-3.5 py-2 rounded-xl transition-colors"
+              title="GitHub に新しいアップデートがあります。クリックして確認"
+            >
+              <Download className="w-4 h-4 text-emerald-300" />
+              アップデートあり (v{availableUpdateVersion})
+            </button>
+          )}
           <div className="flex items-center gap-2 bg-[#111724] border border-[#232e44] rounded-xl px-3.5 py-2">
             <Car className="w-4 h-4 text-cyan-400 shrink-0" />
             <div className="max-w-[320px] truncate font-mono-num text-slate-300" title={carsDir ?? ''}>

@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AcServerLogEvent,
   AcServerSavePayload,
+  AppUpdateCheckResult,
+  AppUpdateProgressEvent,
   CreateCarPayload,
   CustomPresetRecord,
   ElectronAcApi,
@@ -116,6 +118,20 @@ const api: ElectronAcApi = {
     ipcRenderer.on('ac:serverExit', listener);
     return () => {
       ipcRenderer.removeListener('ac:serverExit', listener);
+    };
+  },
+  getAppVersion: () => ipcRenderer.invoke('ac:getAppVersion'),
+  checkForUpdates: () => ipcRenderer.invoke('ac:checkForUpdates'),
+  performAppUpdate: (info: AppUpdateCheckResult) =>
+    ipcRenderer.invoke('ac:performAppUpdate', info),
+  openExternalUrl: (url: string) => ipcRenderer.invoke('ac:openExternalUrl', url),
+  onUpdateProgress: (callback: (event: AppUpdateProgressEvent) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: AppUpdateProgressEvent) => {
+      callback(payload);
+    };
+    ipcRenderer.on('ac:updateProgress', listener);
+    return () => {
+      ipcRenderer.removeListener('ac:updateProgress', listener);
     };
   },
   onAppNavCommand: (callback: (direction: 'back' | 'forward') => void) => {

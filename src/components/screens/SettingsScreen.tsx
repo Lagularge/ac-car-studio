@@ -1,6 +1,8 @@
 import React from 'react';
 import {
   ArrowLeft,
+  Download,
+  ExternalLink,
   FolderOpen,
   HardDrive,
   Image as ImageIcon,
@@ -12,8 +14,10 @@ import {
   Sparkles,
   Sun,
 } from 'lucide-react';
+import type { AppUpdateCheckResult } from '../../types/ac';
 import type { CspLightingPreset } from '../../utils/cspRenderer';
 import type { SkinExportResolution } from '../../utils/liveryEngine';
+import { APP_GITHUB_REPO_URL } from '../../utils/updateChecker';
 
 export interface AppSettingsState {
   defaultAutoBackup: boolean;
@@ -23,6 +27,7 @@ export interface AppSettingsState {
   autoUiScale: boolean;
   manualUiScale: number;
   enableStartupAnimation: boolean;
+  autoCheckUpdates: boolean;
 }
 
 interface SettingsScreenProps {
@@ -34,6 +39,11 @@ interface SettingsScreenProps {
   windowWidth: number;
   windowHeight: number;
   effectiveUiScale: number;
+  appVersion: string;
+  checkingUpdate: boolean;
+  lastUpdateCheck: AppUpdateCheckResult | null;
+  onCheckUpdatesNow: () => void;
+  onOpenUpdateModal: () => void;
   onUpdateSettings: (patch: Partial<AppSettingsState>) => void;
   onPlayStartupAnimation: () => void;
   onPickFolder: () => void;
@@ -51,6 +61,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   windowWidth,
   windowHeight,
   effectiveUiScale,
+  appVersion,
+  checkingUpdate,
+  lastUpdateCheck,
+  onCheckUpdatesNow,
+  onOpenUpdateModal,
   onUpdateSettings,
   onPlayStartupAnimation,
   onPickFolder,
@@ -309,6 +324,92 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <div className="text-[10px] text-slate-400 mt-1">{sub}</div>
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* GitHub Auto-Update Section */}
+          <section className="bg-[#121722] border border-emerald-500/30 rounded-2xl p-5 space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-100">
+                <Download className="w-4 h-4 text-emerald-400" />
+                ソフトウェアアップデート (GitHub 連携)
+              </div>
+              <span className="font-mono-num text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-200">
+                現在バージョン: v{appVersion}
+              </span>
+            </div>
+
+            <label className="flex items-center justify-between bg-[#0b0e14] border border-[#222b3e] rounded-xl p-3.5 cursor-pointer">
+              <div>
+                <div className="font-semibold text-slate-200">
+                  起動時に GitHub リポジトリの最新アップデートを自動確認する
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  新バージョンが見つかった場合、更新内容を表示してアップデートを実行するか確認ダイアログを表示します。
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.autoCheckUpdates}
+                onChange={(e) => onUpdateSettings({ autoCheckUpdates: e.target.checked })}
+                className="accent-emerald-500 w-4 h-4"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0b0e14] border border-[#222b3e] rounded-xl p-3.5">
+              <div className="text-[11px] text-slate-300">
+                {lastUpdateCheck ? (
+                  lastUpdateCheck.status === 'update_available' ? (
+                    <span className="text-emerald-300 font-semibold">
+                      新しいバージョン v{lastUpdateCheck.latestVersion} が利用可能です！
+                    </span>
+                  ) : lastUpdateCheck.status === 'up_to_date' ? (
+                    <span className="text-cyan-300">
+                      最新バージョン (v{lastUpdateCheck.currentVersion}) を使用中です
+                    </span>
+                  ) : lastUpdateCheck.status === 'no_releases' ? (
+                    <span className="text-slate-400">まだ GitHub リリースが公開されていません</span>
+                  ) : (
+                    <span className="text-rose-300">
+                      確認エラー: {lastUpdateCheck.error || '接続できませんでした'}
+                    </span>
+                  )
+                ) : (
+                  <span className="text-slate-400">
+                    配布リポジトリ: {APP_GITHUB_REPO_URL}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {lastUpdateCheck?.status === 'update_available' && (
+                  <button
+                    type="button"
+                    onClick={onOpenUpdateModal}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    アップデート確認画面を開く
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={checkingUpdate}
+                  onClick={onCheckUpdatesNow}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1a2438] hover:bg-[#24324e] disabled:opacity-50 border border-cyan-500/35 text-cyan-200 font-semibold text-xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-spin' : ''}`} />
+                  {checkingUpdate ? '確認中...' : '今すぐアップデートを確認'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.acApi.openExternalUrl(APP_GITHUB_REPO_URL)}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#151d2e] hover:bg-[#1e2a42] border border-[#273550] text-slate-300 text-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  GitHub
+                </button>
+              </div>
             </div>
           </section>
 

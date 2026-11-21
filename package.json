@@ -1,7 +1,14 @@
 {
   "name": "ac-car-studio",
   "version": "1.0.0",
-  "description": "Assetto Corsa 車両作成・物理チューニング・data.acd管理 デスクトップスタジオ",
+  "description": "Assetto Corsa 車両作成・物理チューニング・data.acd管理・サーバー設定 デスクトップスタジオ",
+  "author": "Lagularge",
+  "license": "MIT",
+  "homepage": "https://github.com/Lagularge/ac-car-studio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lagularge/ac-car-studio.git"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "dev:vite": "vite --port 5173 --strictPort",
@@ -51,6 +58,9 @@
     ],
     "win": {
       "target": "portable"
+    },
+    "portable": {
+      "artifactName": "AC-Car-Studio-${version}-win-portable.exe"
     }
   }
 }

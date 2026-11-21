@@ -79,6 +79,12 @@ import {
   sunAngleToTimeLabel,
 } from '../src/utils/serverConfig';
 import {
+  compareSemver,
+  formatBytesCompact,
+  isNewerVersion,
+  pickWindowsReleaseAsset,
+} from '../src/utils/updateChecker';
+import {
   analyzeSuspensionKinematics,
   computeLiveSuspensionPosture,
   extractSuspensionKinematicsInput,
@@ -1146,5 +1152,26 @@ console.log('=== 15. Assetto Corsa Dedicated Server Configurator (server_cfg / e
   assert.equal(joinUrl, 'https://acstuff.ru/s/q:race/online/join?ip=203.0.113.10&httpPort=8085&password=drift');
 }
 console.log('PASS: Assetto Corsa Dedicated Server Configurator, CSP Rules & Entry List Round-Trip verified');
+
+console.log('=== 16. GitHub Release Update Checker (Semver & Windows Asset Picker) Test ===');
+{
+  assert.equal(compareSemver('v1.0.1', '1.0.0') > 0, true);
+  assert.equal(compareSemver('v1.2.0', '1.1.9') > 0, true);
+  assert.equal(compareSemver('v2.0.0', '1.9.9') > 0, true);
+  assert.equal(compareSemver('v1.0.0', '1.0.0'), 0);
+  assert.equal(compareSemver('1.0.0-beta.1', '1.0.0') < 0, true);
+  assert.equal(isNewerVersion('v1.0.1', '1.0.0'), true);
+  assert.equal(isNewerVersion('v1.0.0', '1.0.0'), false);
+  assert.equal(isNewerVersion('v0.9.9', '1.0.0'), false);
+
+  const picked = pickWindowsReleaseAsset([
+    { name: 'source.tar.gz', browser_download_url: 'https://example.com/a.tar.gz', size: 1000 },
+    { name: 'AC-Car-Studio-1.0.1-setup.exe', browser_download_url: 'https://example.com/s.exe', size: 50_000_000 },
+    { name: 'AC-Car-Studio-1.0.1-win-portable.exe', browser_download_url: 'https://example.com/p.exe', size: 82_000_000 },
+  ]);
+  assert.ok(picked && picked.name === 'AC-Car-Studio-1.0.1-win-portable.exe', 'Should prefer portable .exe asset');
+  assert.equal(formatBytesCompact(82 * 1024 * 1024), '82.0 MB');
+}
+console.log('PASS: GitHub Release Update Checker Semver & Windows Asset Picker verified');
 
 console.log('ALL CORE TESTS PASSED!');

@@ -31,6 +31,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import type {
+  AppUpdateCheckResult,
   BackupEntry,
   CarSummary,
   CreateCarPayload,
@@ -88,6 +89,9 @@ const NewCarModal = lazy(() =>
 );
 const BackupModal = lazy(() =>
   import('./components/BackupModal').then((m) => ({ default: m.BackupModal }))
+);
+const UpdateModal = lazy(() =>
+  import('./components/common/UpdateModal').then((m) => ({ default: m.UpdateModal }))
 );
 const DashboardTab = lazy(() =>
   import('./components/tabs/DashboardTab').then((m) => ({ default: m.DashboardTab }))
@@ -203,6 +207,7 @@ const DEFAULT_APP_SETTINGS: AppSettingsState = {
   autoUiScale: true,
   manualUiScale: 1.0,
   enableStartupAnimation: true,
+  autoCheckUpdates: true,
 };
 
 function loadPersistedSettings(): AppSettingsState {
@@ -231,6 +236,8 @@ function loadPersistedSettings(): AppSettingsState {
       manualUiScale: validManualScale,
       enableStartupAnimation:
         typeof parsed.enableStartupAnimation === 'boolean' ? parsed.enableStartupAnimation : true,
+      autoCheckUpdates:
+        typeof parsed.autoCheckUpdates === 'boolean' ? parsed.autoCheckUpdates : true,
     };
   } catch {
     return DEFAULT_APP_SETTINGS;
@@ -305,6 +312,12 @@ export const App: React.FC = () => {
   const [newCarModalOpen, setNewCarModalOpen] = useState(false);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  // GitHub Auto-Update state
+  const [appVersion, setAppVersion] = useState<string>('1.0.0');
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [lastUpdateCheck, setLastUpdateCheck] = useState<AppUpdateCheckResult | null>(null);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
 
   // Startup boot animation & window-adaptive UI scaling (configured from SettingsScreen)
   const [showStartupSplash, setShowStartupSplash] = useState<boolean>(
@@ -424,6 +437,53 @@ export const App: React.FC = () => {
       }
     })();
   }, [scanCars, showToast]);
+
+  const handleCheckForUpdates = useCallback(
+    async (silent = false) => {
+      setCheckingUpdate(true);
+      try {
+        const res = await window.acApi.checkForUpdates();
+        setLastUpdateCheck(res);
+        if (res.status === 'update_available') {
+          setUpdateModalOpen(true);
+        } else if (!silent) {
+          if (res.status === 'up_to_date') {
+            showToast(`最新バージョン (v${res.currentVersion}) を使用中です`, 'success');
+          } else if (res.status === 'no_releases') {
+            showToast('GitHub に公開リリースが見つかりませんでした', 'info');
+          } else {
+            showToast(`アップデート確認失敗: ${res.error || '通信エラー'}`, 'error');
+          }
+        }
+      } catch (err) {
+        if (!silent) {
+          showToast(
+            `アップデート確認エラー: ${err instanceof Error ? err.message : String(err)}`,
+            'error'
+          );
+        }
+      } finally {
+        setCheckingUpdate(false);
+      }
+    },
+    [showToast]
+  );
+
+  // Read version & optionally auto-check GitHub for updates on startup
+  useEffect(() => {
+    window.acApi
+      .getAppVersion()
+      .then((v) => v && setAppVersion(v))
+      .catch(() => {});
+
+    if (!appSettings.autoCheckUpdates) return;
+    const timer = window.setTimeout(() => {
+      void handleCheckForUpdates(true);
+    }, 1800);
+    return () => window.clearTimeout(timer);
+    // Run only once on app boot
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const metrics = useMemo(() => computeCarPhysics(files), [files]);
 
@@ -1040,6 +1100,11 @@ export const App: React.FC = () => {
           carsDir={carsDir}
           carCount={cars.length}
           savedPartCount={savedPartCount}
+          appVersion={appVersion}
+          availableUpdateVersion={
+            lastUpdateCheck?.status === 'update_available' ? lastUpdateCheck.latestVersion : null
+          }
+          onOpenUpdateModal={() => setUpdateModalOpen(true)}
           onSelectMode={handleSelectHomeMode}
           onPickFolder={handlePickFolder}
           onUseDemo={handleUseDemo}
@@ -1113,6 +1178,11 @@ export const App: React.FC = () => {
             windowWidth={adaptiveUi.windowWidth}
             windowHeight={adaptiveUi.windowHeight}
             effectiveUiScale={adaptiveUi.effectiveScale}
+            appVersion={appVersion}
+            checkingUpdate={checkingUpdate}
+            lastUpdateCheck={lastUpdateCheck}
+            onCheckUpdatesNow={() => void handleCheckForUpdates(false)}
+            onOpenUpdateModal={() => setUpdateModalOpen(true)}
             onUpdateSettings={updateAppSettings}
             onPlayStartupAnimation={() => setShowStartupSplash(true)}
             onPickFolder={handlePickFolder}
@@ -1563,6 +1633,17 @@ export const App: React.FC = () => {
             onCreateBackup={handleCreateBackup}
             onRestoreBackup={handleRestoreBackup}
             onDeleteBackup={handleDeleteBackup}
+          />
+        </Suspense>
+      )}
+
+      {updateModalOpen && lastUpdateCheck?.status === 'update_available' && (
+        <Suspense fallback={null}>
+          <UpdateModal
+            open={updateModalOpen}
+            updateInfo={lastUpdateCheck}
+            onClose={() => setUpdateModalOpen(false)}
+            onToast={showToast}
           />
         </Suspense>
       )}
