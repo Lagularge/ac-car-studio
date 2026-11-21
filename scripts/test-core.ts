@@ -1166,10 +1166,11 @@ console.log('=== 16. GitHub Release Update Checker (Semver & Windows Asset Picke
 
   const picked = pickWindowsReleaseAsset([
     { name: 'source.tar.gz', browser_download_url: 'https://example.com/a.tar.gz', size: 1000 },
+    { name: 'AC-Car-Studio-Online-Setup.exe', browser_download_url: 'https://example.com/online.exe', size: 22_000 },
     { name: 'AC-Car-Studio-1.0.1-setup.exe', browser_download_url: 'https://example.com/s.exe', size: 50_000_000 },
     { name: 'AC-Car-Studio-1.0.1-win-portable.exe', browser_download_url: 'https://example.com/p.exe', size: 82_000_000 },
   ]);
-  assert.ok(picked && picked.name === 'AC-Car-Studio-1.0.1-win-portable.exe', 'Should prefer portable .exe asset');
+  assert.ok(picked && picked.name === 'AC-Car-Studio-1.0.1-win-portable.exe', 'Should prefer portable .exe asset and ignore bootstrap online-setup.exe');
   assert.equal(formatBytesCompact(82 * 1024 * 1024), '82.0 MB');
 }
 console.log('PASS: GitHub Release Update Checker Semver & Windows Asset Picker verified');

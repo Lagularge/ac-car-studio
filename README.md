@@ -27,12 +27,24 @@ Assetto Corsa の車両 Mod 作成・3D モデル改造・GT7 風 3D スキン�
   - **プレビュー画像＆コース図付きサーキット選択 GUI**、**写真＆スキンサムネイル付き車両選択 GUI**
   - `cfg/server_cfg.ini`・`cfg/entry_list.ini`・`cfg/csp_extra_options.ini` の読込・編集・保存、5 種の用途プリセット、`acServer.exe` の直接起動・停止・ライブログ表示・Content Manager 招待リンク生成に対応
 
-## ダウンロード（Windows ポータブル版）
+## ダウンロード & インストール方法
 
-インストール不要でそのまま起動できる Windows 用 `.exe` を [GitHub Releases](https://github.com/Lagularge/ac-car-studio/releases/latest) からダウンロードできます。
+### 方法 1: GitHub オンラインインストーラー（推奨・超軽量 約 20 KB）
+常に GitHub Releases から最新バージョンを自動取得してインストール・ショートカット作成・アンインストール登録まで行う GUI オンラインインストーラーです。
 
-1. [Latest Release](https://github.com/Lagularge/ac-car-studio/releases/latest) から `AC-Car-Studio-x.x.x-win-portable.exe` をダウンロード
-2. ダブルクリックして起動（初回起動時に Assetto Corsa の `content/cars` フォルダを自動検出します）
+1. [GitHub Releases](https://github.com/Lagularge/ac-car-studio/releases/latest) から **`AC-Car-Studio-Online-Setup.exe`** をダウンロードして起動
+2. 「最新版をインストール」をクリックすると、GitHub から最新ビルドを自動ダウンロードして検証・導入します
+
+### 方法 2: PowerShell ワンライナー（コマンド1行でオンライン導入）
+Windows PowerShell で以下の 1 行を実行すると、GitHub から最新版を自動取得してインストール・起動します：
+
+```powershell
+irm https://raw.githubusercontent.com/Lagularge/ac-car-studio/main/installer/install.ps1 | iex
+```
+
+### 方法 3: Windows ポータブル単体版（インストール不要）
+1. [Latest Release](https://github.com/Lagularge/ac-car-studio/releases/latest) から **`AC-Car-Studio-x.x.x-win-portable.exe`** をダウンロード
+2. ダブルクリックしてそのまま起動（初回起動時に Assetto Corsa の `content/cars` フォルダを自動検出します）
 
 ## 自動アップデート確認機能
 

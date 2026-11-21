@@ -17,7 +17,8 @@
     "build": "vite build && npm run build:electron",
     "start": "npm run build && electron .",
     "typecheck": "tsc --noEmit",
-    "dist": "npm run build && electron-builder --win"
+    "build:installer": "node scripts/build-online-installer.mjs",
+    "dist": "npm run build && electron-builder --win && npm run build:installer"
   },
   "dependencies": {},
   "devDependencies": {

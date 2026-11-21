@@ -67,7 +67,11 @@ export function pickWindowsReleaseAsset(
   assets: GitHubReleaseAsset[] | undefined
 ): GitHubReleaseAsset | null {
   if (!assets || assets.length === 0) return null;
-  const exes = assets.filter((a) => a.name.toLowerCase().endsWith('.exe'));
+  const exes = assets.filter(
+    (a) =>
+      a.name.toLowerCase().endsWith('.exe') &&
+      !/online[-_]?setup|online[-_]?installer/i.test(a.name)
+  );
   if (exes.length > 0) {
     const portable = exes.find((a) => /portable/i.test(a.name));
     return portable ?? exes[0];
