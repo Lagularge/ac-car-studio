@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-electron/
 release/
+native-host/bin/
+native-host/obj/
+native-host/EmbeddedAssets/
 
 # Logs & temporary files
 *.log

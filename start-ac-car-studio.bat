@@ -1,9 +1,11 @@
 @echo off
 cd /d "%~dp0"
-if not exist "dist\index.html" (
-  call npm run build
+for %%F in ("release\AC-Car-Studio-*-win-portable.exe") do (
+  start "" "%%~fF"
+  exit /b 0
 )
-if not exist "dist-electron\main.js" (
-  call npm run build:electron
+call npm run build
+for %%F in ("release\AC-Car-Studio-*-win-portable.exe") do (
+  start "" "%%~fF"
+  exit /b 0
 )
-npx electron .

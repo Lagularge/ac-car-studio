@@ -51,6 +51,8 @@ import { TrackPickerModal, VisualCarPickerPanel } from './ServerVisualPickers';
 interface ServerSetupScreenProps {
   carsDir: string | null;
   cars: CarSummary[];
+  simpleMode?: boolean;
+  onToggleSimpleMode?: (next: boolean) => void;
   onBackHome: () => void;
   onToast: (text: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -62,6 +64,8 @@ const STORAGE_SERVER_DIR_KEY = 'ac_car_studio_server_dir';
 export const ServerSetupScreen: React.FC<ServerSetupScreenProps> = ({
   carsDir,
   cars,
+  simpleMode = false,
+  onToggleSimpleMode,
   onBackHome,
   onToast,
 }) => {
@@ -418,17 +422,33 @@ export const ServerSetupScreen: React.FC<ServerSetupScreenProps> = ({
       .catch(() => onToast('コピーに失敗しました', 'error'));
   };
 
-  const subTabs: Array<{ id: ServerTabId; label: string; icon: React.ReactNode }> = [
-    { id: 'basic', label: '基本・コース・天候・アシスト', icon: <Globe className="w-3.5 h-3.5" /> },
-    { id: 'sessions', label: 'セッション構成', icon: <Timer className="w-3.5 h-3.5" /> },
-    {
-      id: 'entries',
-      label: `エントリー車両 GUI (${config.entryList.length})`,
-      icon: <Car className="w-3.5 h-3.5" />,
-    },
-    { id: 'csp', label: 'CSP拡張ルール', icon: <Cpu className="w-3.5 h-3.5" /> },
-    { id: 'console', label: '起動コンソール & INI出力', icon: <Terminal className="w-3.5 h-3.5" /> },
-  ];
+  const subTabs: Array<{ id: ServerTabId; label: string; icon: React.ReactNode }> = simpleMode
+    ? [
+        { id: 'basic', label: '基本・コース・天候', icon: <Globe className="w-3.5 h-3.5" /> },
+        {
+          id: 'entries',
+          label: `車両選択 (${config.entryList.length})`,
+          icon: <Car className="w-3.5 h-3.5" />,
+        },
+        { id: 'console', label: '起動 & 招待リンク', icon: <Terminal className="w-3.5 h-3.5" /> },
+      ]
+    : [
+        { id: 'basic', label: '基本・コース・天候・アシスト', icon: <Globe className="w-3.5 h-3.5" /> },
+        { id: 'sessions', label: 'セッション構成', icon: <Timer className="w-3.5 h-3.5" /> },
+        {
+          id: 'entries',
+          label: `エントリー車両 GUI (${config.entryList.length})`,
+          icon: <Car className="w-3.5 h-3.5" />,
+        },
+        { id: 'csp', label: 'CSP拡張ルール', icon: <Cpu className="w-3.5 h-3.5" /> },
+        { id: 'console', label: '起動コンソール & INI出力', icon: <Terminal className="w-3.5 h-3.5" /> },
+      ];
+
+  useEffect(() => {
+    if (simpleMode && (activeTab === 'sessions' || activeTab === 'csp')) {
+      setActiveTab('basic');
+    }
+  }, [simpleMode, activeTab]);
 
   return (
     <div className="h-screen w-screen bg-[#080b11] text-slate-100 flex flex-col overflow-hidden">
@@ -475,6 +495,28 @@ export const ServerSetupScreen: React.FC<ServerSetupScreenProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
+          {onToggleSimpleMode && (
+            <div className="flex items-center bg-[#111724] border border-[#232e44] rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => onToggleSimpleMode(false)}
+                className={`px-2 py-1 rounded text-[11px] font-semibold ${
+                  !simpleMode ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                通常
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleSimpleMode(true)}
+                className={`px-2 py-1 rounded text-[11px] font-semibold ${
+                  simpleMode ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                シンプル
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={handleAutoDetectServer}

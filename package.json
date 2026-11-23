@@ -1,7 +1,7 @@
 {
   "name": "ac-car-studio",
-  "version": "1.0.0",
-  "description": "Assetto Corsa 車両作成・物理チューニング・data.acd管理・サーバー設定 デスクトップスタジオ",
+  "version": "1.1.0",
+  "description": "Assetto Corsa 車両作成・物理チューニング・data.acd管理・サーバー設定 デスクトップスタジオ (軽量 WebView2 版)",
   "author": "Lagularge",
   "license": "MIT",
   "homepage": "https://github.com/Lagularge/ac-car-studio",
@@ -12,15 +12,17 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev:vite": "vite --port 5173 --strictPort",
+    "build:host": "node scripts/build-native-host.mjs",
     "build:electron": "node scripts/build-electron.mjs",
-    "dev": "npm run build:electron && concurrently -k \"npm run dev:vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
-    "build": "vite build && npm run build:electron",
-    "start": "npm run build && electron .",
+    "dev": "concurrently -k \"npm run dev:vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 node scripts/launch-native.mjs\"",
+    "dev:electron": "npm run build:electron && concurrently -k \"npm run dev:vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "vite build && npm run build:host",
+    "start": "npm run build && node scripts/launch-native.mjs",
     "typecheck": "tsc --noEmit",
     "build:installer": "node scripts/build-online-installer.mjs",
     "sign": "powershell -ExecutionPolicy Bypass -File scripts/sign-executables.ps1",
     "trust:cert": "powershell -ExecutionPolicy Bypass -File scripts/sign-executables.ps1 -InstallRootTrust",
-    "dist": "npm run build && electron-builder --win && npm run build:installer && npm run sign"
+    "dist": "npm run build && npm run build:installer && npm run sign"
   },
   "dependencies": {},
   "devDependencies": {

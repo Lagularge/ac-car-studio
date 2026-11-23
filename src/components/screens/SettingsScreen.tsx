@@ -28,6 +28,7 @@ export interface AppSettingsState {
   manualUiScale: number;
   enableStartupAnimation: boolean;
   autoCheckUpdates: boolean;
+  simpleMode: boolean;
 }
 
 interface SettingsScreenProps {
@@ -93,6 +94,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl mx-auto space-y-5 text-xs">
+          {/* Simple Mode vs Full Mode Toggle */}
+          <section className="bg-[#121722] border border-cyan-500/35 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-100">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                操作モード切替（通常モード / シンプルモード）
+              </div>
+              <span className="font-mono-num text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/35 text-cyan-200">
+                現在: {settings.simpleMode ? 'シンプルモード' : '通常モード (フル機能)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ simpleMode: false })}
+                className={`text-left p-3.5 rounded-xl border transition-all ${
+                  !settings.simpleMode
+                    ? 'bg-rose-500/15 border-rose-500 text-white shadow-md shadow-rose-500/10'
+                    : 'bg-[#0b0e14] border-[#242e42] text-slate-300 hover:border-[#3a4968]'
+                }`}
+              >
+                <div className="font-bold text-xs">通常モード（フル機能）</div>
+                <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  エンジン音響Sim・詳細サスペンション・生INI/LUT編集・ACD操作・フローティングウィンドウ等すべての機能を表示します。
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ simpleMode: true })}
+                className={`text-left p-3.5 rounded-xl border transition-all ${
+                  settings.simpleMode
+                    ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-md shadow-cyan-500/10'
+                    : 'bg-[#0b0e14] border-[#242e42] text-slate-300 hover:border-[#3a4968]'
+                }`}
+              >
+                <div className="font-bold text-xs">シンプルモード（かんたん操作）</div>
+                <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  デザインはそのままに、専門パラメータを整理して「簡単チューニング」「スキン」「モデル改造」「サーバー起動」に絞り込みます。
+                </div>
+              </button>
+            </div>
+          </section>
+
           {/* AC Folder Config */}
           <section className="bg-[#121722] border border-[#242e42] rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-100">

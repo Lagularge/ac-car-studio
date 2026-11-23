@@ -28,6 +28,8 @@ interface HomeHubScreenProps {
   carCount: number;
   savedPartCount: number;
   appVersion: string;
+  simpleMode: boolean;
+  onToggleSimpleMode: (next: boolean) => void;
   availableUpdateVersion: string | null;
   onOpenUpdateModal: () => void;
   onSelectMode: (mode: WorkModeId) => void;
@@ -40,6 +42,8 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
   carCount,
   savedPartCount,
   appVersion,
+  simpleMode,
+  onToggleSimpleMode,
   availableUpdateVersion,
   onOpenUpdateModal,
   onSelectMode,
@@ -150,6 +154,35 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          {/* Simple Mode / Full Mode Instant Switch */}
+          <div
+            className="flex items-center bg-[#111724] border border-[#232e44] rounded-xl p-0.5"
+            title="操作モード切替：通常（フル機能） / シンプル（かんたん操作）"
+          >
+            <button
+              type="button"
+              onClick={() => onToggleSimpleMode(false)}
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-colors ${
+                !simpleMode
+                  ? 'bg-rose-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              通常
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleSimpleMode(true)}
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-colors ${
+                simpleMode
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              シンプル
+            </button>
+          </div>
+
           {availableUpdateVersion && (
             <button
               type="button"
@@ -181,25 +214,62 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
             <Sparkles className="w-4 h-4" />
             デモ車両を開く
           </button>
+          {simpleMode && (
+            <button
+              onClick={() => onSelectMode('settings')}
+              className="flex items-center gap-1.5 bg-[#161e2e] hover:bg-[#202c44] border border-[#2b3854] text-slate-200 px-3 py-2 rounded-xl transition-colors"
+              title="設定を開く"
+            >
+              <Settings className="w-4 h-4 text-slate-300" />
+              設定
+            </button>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto px-8 py-10">
-        <div className="mb-8">
-          <div className="text-xs font-mono-num uppercase tracking-[0.22em] text-rose-400 mb-1.5">
-            SELECT WORKSPACE MODE
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="text-xs font-mono-num uppercase tracking-[0.22em] text-rose-400 mb-1.5">
+              {simpleMode ? 'SIMPLE MODE — QUICK WORKSPACE' : 'SELECT WORKSPACE MODE'}
+            </div>
+            <h2 className="text-3xl font-extrabold text-white tracking-tight">
+              {simpleMode ? 'やりたい作業をシンプルに選択' : '行う作業を選択してください'}
+            </h2>
+            <p className="text-sm text-slate-400 mt-1.5">
+              {simpleMode
+                ? 'よく使う4つの主要機能に絞って表示しています。右上の「通常 / シンプル」でいつでも全機能へ切り替えられます。'
+                : '作業を選ぶと、CSP スタイルの大画面ガレージから車両を選んで編集を開始できます。'}
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">
-            行う作業を選択してください
-          </h2>
-          <p className="text-sm text-slate-400 mt-1.5">
-            作業を選ぶと、CSP スタイルの大画面ガレージから車両を選んで編集を開始できます。
-          </p>
+          {simpleMode && (
+            <button
+              type="button"
+              onClick={() => onSelectMode('create_mod')}
+              className="flex items-center gap-1.5 bg-[#141c2c] hover:bg-[#1e2a42] border border-[#2a3854] text-slate-200 text-xs px-3.5 py-2 rounded-xl"
+            >
+              <PlusCircle className="w-4 h-4 text-rose-400" />
+              新規Mod作成
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {cards.map((card) => (
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${
+            simpleMode ? 'lg:grid-cols-2 max-w-5xl' : 'lg:grid-cols-3'
+          } gap-5`}
+        >
+          {(simpleMode
+            ? cards.filter(
+                (c) =>
+                  c.id === 'car_tuning' ||
+                  c.id === 'paint' ||
+                  c.id === 'model_edit' ||
+                  c.id === 'server_setup'
+              )
+            : cards
+          ).map((card) => (
             <button
               key={card.id}
               onClick={() => onSelectMode(card.id)}

@@ -96,6 +96,9 @@ const UpdateModal = lazy(() =>
 const DashboardTab = lazy(() =>
   import('./components/tabs/DashboardTab').then((m) => ({ default: m.DashboardTab }))
 );
+const SimpleTuningTab = lazy(() =>
+  import('./components/tabs/SimpleTuningTab').then((m) => ({ default: m.SimpleTuningTab }))
+);
 const EngineTab = lazy(() =>
   import('./components/tabs/EngineTab').then((m) => ({ default: m.EngineTab }))
 );
@@ -146,6 +149,7 @@ type ScreenRoute =
   | 'settings';
 
 type TabId =
+  | 'simple_tuning'
   | 'dashboard'
   | 'model3d'
   | 'livery'
@@ -208,6 +212,7 @@ const DEFAULT_APP_SETTINGS: AppSettingsState = {
   manualUiScale: 1.0,
   enableStartupAnimation: true,
   autoCheckUpdates: true,
+  simpleMode: false,
 };
 
 function loadPersistedSettings(): AppSettingsState {
@@ -238,6 +243,7 @@ function loadPersistedSettings(): AppSettingsState {
         typeof parsed.enableStartupAnimation === 'boolean' ? parsed.enableStartupAnimation : true,
       autoCheckUpdates:
         typeof parsed.autoCheckUpdates === 'boolean' ? parsed.autoCheckUpdates : true,
+      simpleMode: typeof parsed.simpleMode === 'boolean' ? parsed.simpleMode : false,
     };
   } catch {
     return DEFAULT_APP_SETTINGS;
@@ -644,9 +650,29 @@ export const App: React.FC = () => {
           ? 'livery'
           : work === 'engine_sim'
             ? 'enginesim'
-            : 'dashboard';
+            : appSettings.simpleMode
+              ? 'simple_tuning'
+              : 'dashboard';
     pushNavRoute({ screen: 'workspace', targetWork: work, activeTab: nextTab, carId });
   };
+
+  const handleToggleSimpleMode = useCallback(
+    (next: boolean) => {
+      updateAppSettings({ simpleMode: next });
+      if (screen === 'workspace' && activeTab !== 'model3d' && activeTab !== 'livery') {
+        const simpleAllowed: TabId[] = ['simple_tuning', 'dashboard', 'drivetrain', 'suspension'];
+        if (next && !simpleAllowed.includes(activeTab)) {
+          pushNavRoute({ screen: 'workspace', activeTab: 'simple_tuning' });
+        } else if (!next && activeTab === 'simple_tuning') {
+          pushNavRoute({ screen: 'workspace', activeTab: 'dashboard' });
+        }
+      }
+      if (next && global3dViewerMode !== 'docked') {
+        setGlobal3dViewerMode('docked');
+      }
+    },
+    [activeTab, global3dViewerMode, pushNavRoute, screen, updateAppSettings]
+  );
 
   const commitCarDataChange = useCallback(
     (
@@ -941,7 +967,7 @@ export const App: React.FC = () => {
   };
 
   // Car Data & Physics Tuning tabs (モデル改造 & ペイント/スキン are completely independent studios!)
-  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
+  const fullTabs: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
     { id: 'dashboard', label: 'ダッシュボード', icon: <Gauge className="w-3.5 h-3.5" /> },
     { id: 'enginesim', label: 'エンジン & サウンドSim', icon: <Cpu className="w-3.5 h-3.5" /> },
     { id: 'engine', label: 'エンジン & ターボ', icon: <Flame className="w-3.5 h-3.5" /> },
@@ -953,6 +979,15 @@ export const App: React.FC = () => {
     { id: 'presets', label: 'プリセット & 比較', icon: <Sparkles className="w-3.5 h-3.5" /> },
     { id: 'raw', label: '生INI / LUT編集', icon: <FileCode2 className="w-3.5 h-3.5" /> },
   ];
+
+  const simpleTabs: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
+    { id: 'simple_tuning', label: '簡単チューニング', icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: 'dashboard', label: 'ダッシュボード', icon: <Gauge className="w-3.5 h-3.5" /> },
+    { id: 'drivetrain', label: '駆動系 & AT/CVT', icon: <Cog className="w-3.5 h-3.5" /> },
+    { id: 'suspension', label: 'サスペンション (3D)', icon: <Sliders className="w-3.5 h-3.5" /> },
+  ];
+
+  const tabs = appSettings.simpleMode ? simpleTabs : fullTabs;
 
   const isStandaloneModelStudio = activeTab === 'model3d';
   const isStandaloneLiveryStudio = activeTab === 'livery';
@@ -971,6 +1006,16 @@ export const App: React.FC = () => {
   const renderTabBody = (tabId: TabId) => {
     if (!loadedCar) return null;
     switch (tabId) {
+      case 'simple_tuning':
+        return (
+          <SimpleTuningTab
+            files={files}
+            metrics={metrics}
+            onUpdateFile={handleUpdateFile}
+            onReplaceAllFiles={handleReplaceAllFiles}
+            onSwitchToFullMode={() => handleToggleSimpleMode(false)}
+          />
+        );
       case 'dashboard':
         return (
           <DashboardTab
@@ -1101,6 +1146,8 @@ export const App: React.FC = () => {
           carCount={cars.length}
           savedPartCount={savedPartCount}
           appVersion={appVersion}
+          simpleMode={appSettings.simpleMode}
+          onToggleSimpleMode={handleToggleSimpleMode}
           availableUpdateVersion={
             lastUpdateCheck?.status === 'update_available' ? lastUpdateCheck.latestVersion : null
           }
@@ -1199,6 +1246,8 @@ export const App: React.FC = () => {
           <ServerSetupScreen
             carsDir={carsDir}
             cars={cars}
+            simpleMode={appSettings.simpleMode}
+            onToggleSimpleMode={handleToggleSimpleMode}
             onBackHome={refreshPartCountAndGoHome}
             onToast={showToast}
           />
@@ -1358,7 +1407,33 @@ export const App: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              {!isStandaloneStudio && (
+              {/* Simple / Full Mode Toggle */}
+              <div className="flex items-center bg-[#121927] border border-[#253048] rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleToggleSimpleMode(false)}
+                  className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
+                    !appSettings.simpleMode
+                      ? 'bg-rose-600 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  通常
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleSimpleMode(true)}
+                  className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
+                    appSettings.simpleMode
+                      ? 'bg-cyan-600 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  シンプル
+                </button>
+              </div>
+
+              {!isStandaloneStudio && !appSettings.simpleMode && (
                 <>
                   {loadedCar.summary.hasDataAcd && (
                     <button
@@ -1450,25 +1525,29 @@ export const App: React.FC = () => {
 
               {!isStandaloneStudio && (
                 <>
-                  <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={autoBackupOnSave}
-                      onChange={(e) => setAutoBackupOnSave(e.target.checked)}
-                      className="accent-cyan-500"
-                    />
-                    自動Backup
-                  </label>
+                  {!appSettings.simpleMode && (
+                    <>
+                      <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={autoBackupOnSave}
+                          onChange={(e) => setAutoBackupOnSave(e.target.checked)}
+                          className="accent-cyan-500"
+                        />
+                        自動Backup
+                      </label>
 
-                  <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={repackOnSave}
-                      onChange={(e) => setRepackOnSave(e.target.checked)}
-                      className="accent-amber-500"
-                    />
-                    ACD更新
-                  </label>
+                      <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={repackOnSave}
+                          onChange={(e) => setRepackOnSave(e.target.checked)}
+                          className="accent-amber-500"
+                        />
+                        ACD更新
+                      </label>
+                    </>
+                  )}
 
                   {isDirty && (
                     <button
@@ -1516,42 +1595,44 @@ export const App: React.FC = () => {
                 })}
               </div>
 
-              {/* 3D Model Viewer Only Floating / Separate Window Quick Switch */}
-              <div className="flex items-center gap-1.5 py-1.5 shrink-0">
-                <span className="text-[11px] text-slate-400 hidden xl:inline mr-0.5">
-                  3Dモデルビューワーのみ:
-                </span>
-                {global3dViewerMode !== 'docked' ? (
-                  <button
-                    type="button"
-                    onClick={() => setGlobal3dViewerMode('docked')}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold"
-                  >
-                    3Dビューワーを閉じる
-                  </button>
-                ) : (
-                  <>
+              {/* 3D Model Viewer Only Floating / Separate Window Quick Switch (Full Mode) */}
+              {!appSettings.simpleMode && (
+                <div className="flex items-center gap-1.5 py-1.5 shrink-0">
+                  <span className="text-[11px] text-slate-400 hidden xl:inline mr-0.5">
+                    3Dモデルビューワーのみ:
+                  </span>
+                  {global3dViewerMode !== 'docked' ? (
                     <button
                       type="button"
-                      onClick={() => setGlobal3dViewerMode('floating')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#161f30] hover:bg-[#22304a] border border-[#2c3a57] text-cyan-300 text-[11px] font-medium"
-                      title="どのデータ編集タブからでも、3Dモデルビューワーのみをフローティング表示して車高・タイヤ・キャンバー・トーをリアルタイム確認できます"
+                      onClick={() => setGlobal3dViewerMode('docked')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold"
                     >
-                      <PictureInPicture2 className="w-3.5 h-3.5" />
-                      3Dビューワーをフローティング
+                      3Dビューワーを閉じる
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setGlobal3dViewerMode('popout')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-200 text-[11px] font-medium"
-                      title="3Dモデルビューワーのみを独立した別ウィンドウとして開きます"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      3Dビューワーを別ウィンドウ
-                    </button>
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setGlobal3dViewerMode('floating')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#161f30] hover:bg-[#22304a] border border-[#2c3a57] text-cyan-300 text-[11px] font-medium"
+                        title="どのデータ編集タブからでも、3Dモデルビューワーのみをフローティング表示して車高・タイヤ・キャンバー・トーをリアルタイム確認できます"
+                      >
+                        <PictureInPicture2 className="w-3.5 h-3.5" />
+                        3Dビューワーをフローティング
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGlobal3dViewerMode('popout')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-200 text-[11px] font-medium"
+                        title="3Dモデルビューワーのみを独立した別ウィンドウとして開きます"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        3Dビューワーを別ウィンドウ
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </nav>
           )}
 

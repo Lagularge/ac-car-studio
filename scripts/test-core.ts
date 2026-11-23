@@ -85,6 +85,16 @@ import {
   pickWindowsReleaseAsset,
 } from '../src/utils/updateChecker';
 import {
+  applySimpleDriveType,
+  applySimpleGripTier,
+  applySimpleHybridTier,
+  applySimplePowerMultiplier,
+  applySimpleQuickPackage,
+  applySimpleRideHeightDeltaMm,
+  applySimpleTurboBoost,
+  extractSimpleTuningSnapshot,
+} from '../src/utils/simpleTuning';
+import {
   analyzeSuspensionKinematics,
   computeLiveSuspensionPosture,
   extractSuspensionKinematicsInput,
@@ -1174,5 +1184,42 @@ console.log('=== 16. GitHub Release Update Checker (Semver & Windows Asset Picke
   assert.equal(formatBytesCompact(82 * 1024 * 1024), '82.0 MB');
 }
 console.log('PASS: GitHub Release Update Checker Semver & Windows Asset Picker verified');
+
+console.log('=== 17. Simple Mode Easy Tuning Utilities & Quick Packages Test ===');
+{
+  const snap0 = extractSimpleTuningSnapshot(base.files);
+  assert.equal(snap0.massKg, 1350);
+  assert.equal(snap0.driveType, 'RWD');
+
+  const basePhys = computeCarPhysics(base.files);
+  const boosted = applySimplePowerMultiplier(base.files, 1.25);
+  const boostedPhys = computeCarPhysics(boosted);
+  assert.ok(boostedPhys.peakPowerPs > basePhys.peakPowerPs * 1.2, 'Power multiplier must raise peak PS by ~25%');
+
+  const turboed = applySimpleTurboBoost(base.files, 1.5, basePhys.maxRpm);
+  assert.equal(getIniNumber(turboed['engine.ini'], 'TURBO_0', 'MAX_BOOST', 0), 1.5);
+  const naReverted = applySimpleTurboBoost(turboed, 0, basePhys.maxRpm);
+  assert.equal(naReverted['engine.ini'].includes('[TURBO_0]'), false, '0 bar must remove TURBO_0 cleanly');
+
+  const slick = applySimpleGripTier(base.files, 'slick');
+  assert.equal(getIniNumber(slick['tyres.ini'], 'REAR', 'DX_REF', 0), 1.65);
+
+  const lowered = applySimpleRideHeightDeltaMm(base.files, 20);
+  assert.equal(extractSimpleTuningSnapshot(lowered).frontRodLengthMm, 20);
+
+  const awd = applySimpleDriveType(base.files, 'AWD');
+  assert.equal(extractSimpleTuningSnapshot(awd).driveType, 'AWD');
+
+  const hyb = applySimpleHybridTier(base.files, 'sport_phev', basePhys.maxRpm);
+  assert.equal(computeCarPhysics(hyb).hasHybrid, true);
+  const hybOff = applySimpleHybridTier(hyb, 'off', basePhys.maxRpm);
+  assert.equal(computeCarPhysics(hybOff).hasHybrid, false);
+
+  const hyper = applySimpleQuickPackage(base.files, 'hyper_boost', basePhys);
+  const hyperPhys = computeCarPhysics(hyper);
+  assert.equal(hyperPhys.hasHybrid, true);
+  assert.ok((hyperPhys.combinedPeakPowerPs ?? 0) > basePhys.peakPowerPs + 250);
+}
+console.log('PASS: Simple Mode Easy Tuning & Quick Packages verified');
 
 console.log('ALL CORE TESTS PASSED!');
